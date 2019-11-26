@@ -29,6 +29,10 @@ loopNum = 0
 interval = 0.05
 offset = 10
 
+threshold = 0.1
+peakCount = 1
+active = True
+
 def addDot(x):
     points.pop(0)
     points.append(x)
@@ -48,23 +52,42 @@ def translate(val):
     return newVal
 
 def drawDescriptor():
-	x = pygame.mouse.get_pos()[0]
-	y = pygame.mouse.get_pos()[1]
-	pygame.draw.line(screen, BLUE, (x,0), (x,height), 1)
-	textsurface = font.render(str(points[x-1]), False, BLUE)
-	fontHeight = font.get_height()
-	screen.blit(textsurface,(x,y-fontHeight))
-	
+    x = pygame.mouse.get_pos()[0]
+    y = pygame.mouse.get_pos()[1]
+    pygame.draw.line(screen, BLUE, (x,0), (x,height), 1)
+    textsurface = font.render(str(points[x-1]-offset), False, BLUE)
+    fontHeight = font.get_height()
+    screen.blit(textsurface,(x,y-fontHeight))
+    
+def checkPeak(y):
+    if(y > (points[width-1]-offset) * (1+threshold) and y > 3):
+        global peakCount
+        peakCount += 1
+        x = pygame.mouse.get_pos()[0]
+        y = pygame.mouse.get_pos()[1]
+        #textsurface = font.render(str(points[width-1]), False, GREEN)
+        textsurface = font.render("PEAK "+str(peakCount), False, GREEN)
+        fontHeight = font.get_height()
+        screen.blit(textsurface,(x,y+fontHeight))
+    else:
+        global peakCount
+        peakCount = 0
+    
+    
 while 1:
     for event in pygame.event.get():
         if event.type == pygame.QUIT: sys.exit()
-    loopNum = loopNum + 1
-    reading = mcp.read_adc(0)
-    plotVal = translate(reading)
-    addDot(plotVal)
+        elif event.type == pygame.KEYDOWN: active =  not active
+    
+    if active:
+        loopNum = loopNum + 1
+        reading = mcp.read_adc(0)
+        plotVal = translate(reading)
+        addDot(plotVal)
     screen.fill(BLACK)
     drawDots()
     drawDescriptor()
+    checkPeak(reading)
     pygame.display.flip()
     time.sleep(interval)
     
